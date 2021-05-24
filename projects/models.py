@@ -41,3 +41,13 @@ class FundingOption(models.Model):
 
     class Meta:
         db_table = "funding_options"
+
+class Donation(models.Model):
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
+    funding_option = models.ForeignKey("FundingOption", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "donations"
