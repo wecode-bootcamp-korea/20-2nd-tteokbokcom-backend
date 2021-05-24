@@ -16,7 +16,7 @@ class User(models.Model):
 
 class Likes(models.Model):
 
-    user = models.ForeignKey('User', on_delete=models.CASCADE)
+    user    = models.ForeignKey('User', on_delete=models.CASCADE)
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE)
 
     class Meta():
