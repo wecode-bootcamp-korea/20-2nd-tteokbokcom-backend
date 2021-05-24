@@ -164,3 +164,98 @@ class UsersTest(TestCase):
         
         self.assertEqual(response.status_code, mock_response.status_code)
         self.assertEqual(response.json(), {'message': 'this access token is already expired', 'status': 'API_ERROR'})
+    def test_signupview_post_success(self):
+        user_data = {
+            "username": "김떡볶",
+            "email"   : "ilove@tteokbok.com",
+            "password": "tteokbokki"
+        }
+
+        response = self.client.post('/users/signup', data=user_data, content_type="application/json")
+        user_id  = User.objects.get(email=user_data["email"]).id
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+                "status": "SUCCESS",
+                "data"  : {
+                    "user": {
+                        "id"               : user_id,
+                        "username"         : "김떡볶",
+                        "introduction"     : None,
+                        "email"            : "ilove@tteokbok.com",
+                        "profile_image_url": "",
+                        "kakao_id"         : None
+                    }
+                }
+            }
+        )
+
+    def test_signupview_post_duplicated_email(self):
+        user_data = {
+            "username": "김떡볶",
+            "email"   : "test01@tteokbok.com",
+            "password": "tteokbokki"
+        }
+
+        response = self.client.post('/users/signup', data=user_data, content_type="application/json")
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json(), {
+            "status" : "DUPLICATED_ENTRY_ERROR",
+            "message": "Entry email is duplicated."
+            }
+        )
+
+    def test_signupview_post_invalid_email(self):
+        user_data_invalid_email = {
+            "username": "김떡볶",
+            "email"   : "iloveteokbok.com",
+            "password": "tteokbokki"
+        }
+        response_invalid_email = self.client.post('/users/signup', data=user_data_invalid_email, content_type="application/json")
+
+        self.assertEqual(response_invalid_email.json(), {'message': f'{user_data_invalid_email["email"]} is not an valid email.',
+                                                         'status': 'INVALID_DATA_ERROR'})
+
+    def test_signupview_post_too_short_password(self):
+        user_data_too_short_password = {
+            "username": "김떡볶",
+            "email"   : "ilove@teokbok.com",
+            "password": "123"
+        }
+        response_too_short_password = self.client.post('/users/signup', data=user_data_too_short_password, content_type="application/json")
+
+        self.assertEqual(response_too_short_password.json(), {'message': 'Invalid Password Length, Use password length between 6 and 20',
+                                                              'status': 'INVALID_DATA_ERROR'})
+
+    def test_signupview_post_too_long_password(self):
+        user_data_too_long_password = {
+            "username": "김떡볶",
+            "email"   : "ilove@teokbok.com",
+            "password": "12345"*5
+        }
+        response_too_long_password  = self.client.post('/users/signup', data=user_data_too_long_password, content_type="application/json")
+
+        self.assertEqual(response_too_long_password.json(), {'message': 'Invalid Password Length, Use password length between 6 and 20',
+                                                             'status': 'INVALID_DATA_ERROR'})
+
+    def test_signupview_post_too_short_username(self):
+        user_data_too_short_username = {
+            "username": "김",
+            "email"   : "ilove@teokbok.com",
+            "password": "tteokbokki"
+        }
+        response_short_username     = self.client.post('/users/signup', data=user_data_too_short_username, content_type="application/json")
+
+        self.assertEqual(response_short_username.json(), {'message': 'Invalid Username, Use Username length between 2 and 40',
+                                                          'status': 'INVALID_DATA_ERROR'})
+
+    def test_signupview_post_too_long_username(self):
+        user_data_too_long_username = {
+            "username": "김"*50,
+            "email"   : "ilove@teokbok.com",
+            "password": "tteokbokki"
+        }
+        response_too_long_username  = self.client.post('/users/signup', data=user_data_too_long_username, content_type="application/json")
+
+        self.assertEqual(response_too_long_username.json(), {'message': 'Invalid Username, Use Username length between 2 and 40',
+                                                             'status': 'INVALID_DATA_ERROR'})
