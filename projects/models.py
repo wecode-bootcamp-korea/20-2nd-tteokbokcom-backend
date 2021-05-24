@@ -37,7 +37,7 @@ class Tag(models.Model):
 class FundingOption(models.Model):
     amount  = models.DecimalField(max_digits=10, decimal_places=2)
     project = models.ForeignKey("Project", on_delete=models.CASCADE)
-    remains = models.DecimalField(max_digits=10, null=True)
+    remains = models.IntegerField(null=True)
 
     class Meta:
         db_table = "funding_options"
