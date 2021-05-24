@@ -1,5 +1,5 @@
-from django.db import models
-
+from django.db              import models
+from django.forms.models    import model_to_dict
 class User(models.Model):
 
     username          = models.CharField(max_length=40, blank=False)
@@ -14,6 +14,8 @@ class User(models.Model):
     def __str__(self):
         return f'{self.id}: {self.email} | {self.username}'
 
+    def to_dict(self, *args):
+        return model_to_dict(self, exclude=[*args])
 class Likes(models.Model):
 
     user    = models.ForeignKey('User', on_delete=models.CASCADE)
