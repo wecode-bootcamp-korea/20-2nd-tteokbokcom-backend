@@ -10,9 +10,17 @@ class Project(models.Model):
     launch_data     = models.DateTimeField()
     end_data        = models.DateTimeField()
     created_at      = models.DateTimeField(auto_now_add=True)
+    tag             = models.ManyToManyField("Tag", through="ProjectTag")
 
     class Meta:
         db_table = "projects"
+
+class ProjectTag(models.Model):
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
+    tag     = models.ForeignKey("Tag", on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "project_tags"
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
@@ -25,3 +33,11 @@ class Tag(models.Model):
 
     class Meta:
         db_table = "tags"
+
+class FundingOption(models.Model):
+    amount  = models.DecimalField(max_digits=10, decimal_places=2)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
+    remains = models.DecimalField(max_digits=10, null=True)
+
+    class Meta:
+        db_table = "funding_options"
