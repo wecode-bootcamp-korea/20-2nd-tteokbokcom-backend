@@ -158,3 +158,130 @@ class ProjectDetailTest(TestCase):
             }
         )
         self.assertEqual(response.status_code, 404)
+
+class ProjectListTest(TestCase):
+
+    def setUp(self):
+        User.objects.create(
+            username          = 'testuser1',
+            email             = 'test1@mail.com',
+            password          = '12345678',
+            profile_image_url = "test.jpg"
+        )
+
+        User.objects.create(
+            username          = 'testuser2',
+            email             = 'test2@mail.com',
+            password          = '12345678',
+            profile_image_url = "test.jpg"
+        )
+
+        Category.objects.create(
+            name = '카테고리1'
+        )
+
+        Category.objects.create(
+            name = '카테고리2'
+        )
+
+        Project.objects.create(
+            title           = '타이틀1',
+            creater         = User.objects.first(),
+            summary         = '프로젝트 설명',
+            category        = Category.objects.get(name='카테고리1'),
+            title_image_url = 'test.jpg',
+            target_fund     = 100000,
+            launch_date     = '2021-05-20',
+            end_date        = '2021-05-29'
+        )
+
+        Project.objects.create(
+            title           = '타이틀2',
+            creater         = User.objects.first(),
+            summary         = '프로젝트 설명',
+            category        = Category.objects.get(name='카테고리2'),
+            title_image_url = 'test.jpg',
+            target_fund     = 200000,
+            launch_date     = '2021-05-24',
+            end_date        = '2021-05-30'
+        )
+
+        FundingOption.objects.create(
+            amount = 1000,
+            project = Project.objects.first(),
+            remains = 10,
+            title = '상품옵션1',
+            description = '상품설명'
+        )
+
+        FundingOption.objects.create(
+            amount = 2000,
+            project = Project.objects.first(),
+            remains = 10,
+            title = '상품옵션2',
+            description = '상품설명'
+        )
+
+        FundingOption.objects.create(
+            amount = 3000,
+            project = Project.objects.first(),
+            remains = 10,
+            title = '상품옵션3',
+            description = '상품설명'
+        )
+
+        FundingOption.objects.create(
+            amount = 1000,
+            project = Project.objects.get(id=2),
+            remains = 10,
+            title = '상품옵션1',
+            description = '상품설명'
+        )
+
+        FundingOption.objects.create(
+            amount = 2000,
+            project = Project.objects.get(id=2),
+            remains = 10,
+            title = '상품옵션2',
+            description = '상품설명'
+        )
+
+        FundingOption.objects.create(
+            amount = 3000,
+            project = Project.objects.get(id=2),
+            remains = 10,
+            title = '상품옵션3',
+            description = '상품설명'
+        )
+
+        Donation.objects.create(
+            funding_option = FundingOption.objects.get(id=1),
+            project = Project.objects.get(id=1),
+            user = User.objects.get(id=1)
+        )
+
+        Donation.objects.create(
+            funding_option = FundingOption.objects.get(id=2),
+            project = Project.objects.get(id=1),
+            user = User.objects.get(id=1)
+        )
+
+        Donation.objects.create(
+            funding_option = FundingOption.objects.get(id=5),
+            project = Project.objects.get(id=2),
+            user = User.objects.get(id=2)
+        )
+
+        Donation.objects.create(
+            funding_option = FundingOption.objects.get(id=6),
+            project = Project.objects.get(id=2),
+            user = User.objects.get(id=2)
+        )
+
+    def test_projectlistview_get_success(self):
+        client = Client()
+        response = client.get('/projects')
+
+        self.assertEqual(response.json(),
+                         {"projects": [{"id": 2, "title_image_url": "title.jpg", "title": "\ud504\ub85c\uc81d\ud2b82", "category": "\uce74\ud14c\uace0\ub9ac2", "creater": "testuser1", "summary": "\ub3c8\ub0b4\ub194\uc694 \ub3c8\ub0b4\ub194", "funding_amount": "5000.00", "target_amount": "2000000.00", "end_date": "2021-05-31T00:00:00"}, {"id": 1, "title_image_url": "title.jpg", "title": "\ud504\ub85c\uc81d\ud2b81", "category": "\uce74\ud14c\uace0\ub9ac1", "creater": "testuser1", "summary": "\ub3c8\ub0b4\ub194\uc694 \ub3c8\ub0b4\ub194", "funding_amount": "3000.00", "target_amount": "1000000.00", "end_date": "2021-05-30T00:00:00"}]}
+                        )

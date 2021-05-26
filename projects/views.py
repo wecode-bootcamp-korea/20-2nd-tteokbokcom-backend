@@ -5,7 +5,7 @@ from django.views         import View
 from django.db.models     import Sum
 from django.http.response import JsonResponse
 
-from .models              import Project, Donation
+from projects.models              import Project, Donation
 
 class ProjectDetailView(View):
     def get(self, request, id):
@@ -40,3 +40,22 @@ class ProjectDetailView(View):
 
         except Project.DoesNotExist:
             return JsonResponse({'messages': 'DOES_NOT_EXIST'}, status=404)
+
+class ProjectListView(View):
+
+    def get(self, request):
+        project_list = Project.objects.all().order_by('-id').select_related('category', 'creater').prefetch_related('donation_set')
+
+        projects = [{
+            'id'                   : project.id,
+            'title_image_url'      : project.title_image_url,
+            'title'                : project.title,
+            'category'             : project.category.name,
+            'creater'              : project.creater.username,
+            'summary'              : project.summary,
+            'funding_amount'       : int(project.donation_set.all().aggregate(Sum('funding_option__amount'))['funding_option__amount__sum']),
+            'target_amount'        : int(project.target_fund),
+            'end_date'             : project.end_date
+        } for project in project_list]
+
+        return JsonResponse({'projects': projects}, status=200)
