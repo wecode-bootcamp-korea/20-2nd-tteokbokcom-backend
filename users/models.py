@@ -16,6 +16,7 @@ class User(models.Model):
 
     def to_dict(self, *args):
         return model_to_dict(self, exclude=[*args])
+        
 class Likes(models.Model):
 
     user    = models.ForeignKey('User', on_delete=models.CASCADE)

@@ -7,13 +7,16 @@ class Project(models.Model):
     category        = models.ForeignKey("Category", on_delete=models.CASCADE)
     title_image_url = models.URLField(max_length=2000)
     target_fund     = models.DecimalField(max_digits=10, decimal_places=2)
-    launch_data     = models.DateTimeField()
-    end_data        = models.DateTimeField()
+    launch_date     = models.DateTimeField()
+    end_date        = models.DateTimeField()
     created_at      = models.DateTimeField(auto_now_add=True)
     tag             = models.ManyToManyField("Tag", through="ProjectTag")
 
     class Meta:
         db_table = "projects"
+    
+    def __str__(self):
+        return self.title
 
 class ProjectTag(models.Model):
     project = models.ForeignKey("Project", on_delete=models.CASCADE)
@@ -35,9 +38,11 @@ class Tag(models.Model):
         db_table = "tags"
 
 class FundingOption(models.Model):
-    amount  = models.DecimalField(max_digits=10, decimal_places=2)
-    project = models.ForeignKey("Project", on_delete=models.CASCADE)
-    remains = models.IntegerField(null=True)
+    amount      = models.DecimalField(max_digits=10, decimal_places=2)
+    project     = models.ForeignKey("Project", on_delete=models.CASCADE)
+    remains     = models.IntegerField(null=True)
+    title       = models.CharField(max_length=100)
+    description = models.TextField()
 
     class Meta:
         db_table = "funding_options"
