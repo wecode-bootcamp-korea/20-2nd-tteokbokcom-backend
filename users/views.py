@@ -1,6 +1,5 @@
 import json
 from json                   import JSONDecodeError
-import bcrypt
 
 from django.http            import JsonResponse
 from django.views           import View
@@ -13,6 +12,7 @@ from users.validators       import (DuplicatedEntryError,
                                     validate_email, 
                                     validate_password, 
                                     validate_duplicate)
+from utils.auth             import  hash_password
 
 class SignUpView(View):
     def post(self, request):
@@ -21,7 +21,7 @@ class SignUpView(View):
             username        = validate_username(data['username'])
             email           = validate_email(data['email'])
             password        = validate_password(data['password'])
-            hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            hashed_password = hash_password(password)
             validate_duplicate(User, data)
 
             user = User.objects.create(
