@@ -53,6 +53,12 @@ class SignUpView(View):
         except DataError as e:
             return JsonResponse({"status": "INVALID_DATA_ERROR", "message": e.args[1]}, status=400)
 
+class MeView(View):
+    @method_decorator(login_required())
+    def get(self, request):
+        user = request.user
+        return JsonResponse({"status": "SUCCESS", "data": {"user": user.to_dict('password')}}, status=200)
+
 class SignInView(View):
     def post(self, request):
         try:
@@ -125,9 +131,3 @@ class KakaoSignInView(View):
 
         except DuplicatedEntryError as e:
             return JsonResponse({"status": "DUPLICATED_ENTRY_ERROR", "message": e.err_message}, status=409)
-
-class MeView(View):
-    @method_decorator(login_required())
-    def get(self, request):
-        user = request.user
-        return JsonResponse({"status": "SUCCESS", "data": {"user": user.to_dict('password')}}, status=200)
