@@ -92,6 +92,7 @@ class KakaoSignInView(View):
                 user = User.objects.get(kakao_id = kakao_id)
 
             else:
+                validate_duplicate(User, {"username": username, "email": email, "profile_image_url": profile_image_url})
                 user = User.objects.create(
                                             username          = username,
                                             email             = email,
