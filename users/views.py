@@ -82,14 +82,18 @@ class SignInView(View):
 class KakaoSignInView(View):
     def post(self, request):
         try:
-            data               = json.loads(request.body)
-            access_token       = data['access_token']
-            user_info_response = requests.get('https://kapi.kakao.com/v2/user/me', headers={"Authorization": f'Bearer ${access_token}'})
-            user_info          = user_info_response.json()
-            kakao_id           = user_info['id']
-            username           = user_info['properties']['nickname']
-            profile_image_url  = user_info['properties']['profile_image']
-            email              = user_info['kakao_account'].get('email')
+            data         = json.loads(request.body)
+            access_token = data['access_token']
+            response     = requests.get('https://kapi.kakao.com/v2/user/me', headers={"Authorization": f'Bearer ${access_token}'})
+            data         = response.json()
+
+            if not response.ok:
+                return JsonResponse({"status": "API_ERROR", "message": data['msg']}, status=response.status_code)
+
+            kakao_id           = data['id']
+            username           = data['properties']['nickname']
+            profile_image_url  = data['properties']['profile_image']
+            email              = data['kakao_account'].get('email')
 
             if (User.objects.filter(kakao_id = kakao_id).exists()):
                 user = User.objects.get(kakao_id = kakao_id)
