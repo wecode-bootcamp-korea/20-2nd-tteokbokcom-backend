@@ -19,7 +19,7 @@ def validate_username(username):
     MAX_USERNAME_LENGTH = 40
 
     if len(username) < MIN_USERNAME_LENGTH or len(username) > MAX_USERNAME_LENGTH:
-        raise ValidationError(f'Invalid Password Length, Use password length between {MIN_USERNAME_LENGTH} and {MAX_USERNAME_LENGTH}')
+        raise ValidationError(f'Invalid Username, Use Useraname length between {MIN_USERNAME_LENGTH} and {MAX_USERNAME_LENGTH}')
         
     return username
     
