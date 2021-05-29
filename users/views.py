@@ -37,6 +37,9 @@ class SignUpView(View):
 
             return JsonResponse({"status": "SUCCESS", "data": {"user": user.to_dict('password')}}, status=200)
 
+        except JSONDecodeError as e:
+            return JsonResponse({"status": "JSON_DECODE_ERROR", "message": e.msg}, status=400)
+
         except ValidationError as e:
             return JsonResponse({"status": "INVALID_DATA_ERROR", "message": e.message}, status=400)
 
