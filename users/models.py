@@ -7,6 +7,7 @@ class User(models.Model):
     email             = models.EmailField(max_length=254, unique=True, blank=False)
     password          = models.CharField(max_length=65, blank=False)
     profile_image_url = models.URLField(max_length=2000)
+    kakao_id          = models.IntegerField(null=True)
 
     class Meta:
         db_table = "users"
