@@ -18,7 +18,9 @@ from utils.auth             import (UnauthorizationError,
                                     issue_token,
                                     hash_password,
                                     )
-                                    
+from utils.decorators        import login_required
+from django.utils.decorators import method_decorator
+
 class SignUpView(View):
     def post(self, request):
         try:
@@ -124,3 +126,9 @@ class KakaoSignInView(View):
 
         except DuplicatedEntryError as e:
             return JsonResponse({"status": "DUPLICATED_ENTRY_ERROR", "message": e.err_message}, status=409)
+
+class MeView(View):
+    @method_decorator(login_required())
+    def get(self, request):
+        user = request.user
+        return JsonResponse({"status": "SUCCESS", "data": {"user": user.to_dict('password')}}, status=200)

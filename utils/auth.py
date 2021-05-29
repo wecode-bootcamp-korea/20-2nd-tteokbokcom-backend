@@ -2,6 +2,7 @@ import jwt
 import time
 import bcrypt
 
+from users.models       import User
 from tteokbok.settings import JWT_SECRET_KEY, JWT_ALGORITHM, JWT_DURATION_SEC
 
 class UnauthorizationError(Exception):
@@ -29,3 +30,11 @@ def issue_token(user):
                             JWT_ALGORITHM
                             )
     return new_token
+
+def decode_jwt(token):
+    return jwt.decode(token, JWT_SECRET_KEY, JWT_ALGORITHM)
+    
+def get_user_from_jwt(token):
+    payload = decode_jwt(token)
+    user    = User.objects.get(pk=payload.get('user_id'))
+    return user
