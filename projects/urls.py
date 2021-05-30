@@ -1,8 +1,7 @@
-from projects.models import Project
-from django.urls import path
+from django.urls       import path
 
-from .views import ProjectDetailView
+from projects.views    import ProjectRegisterView
 
 urlpatterns = [
-    path('/<int:id>', ProjectDetailView.as_view()),
+    path('', ProjectRegisterView.as_view()),
 ]

@@ -2,7 +2,6 @@ from django.db              import models
 from django.forms.models    import model_to_dict
 
 class User(models.Model):
-
     username               = models.CharField(max_length=40, blank=False)
     introduction           = models.TextField(null=True)
     email                  = models.EmailField(max_length=254, unique=True, blank=False)
