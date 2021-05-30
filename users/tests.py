@@ -101,3 +101,37 @@ class UsersTest(TestCase):
         self.case_signupview_post_success()
         self.case_signupview_post_duplicated_email()
         self.case_signupview_post_invalid_data()
+
+    def case_signinview_post_success(self):
+        user_data = {
+            "email"   : "test01@tteokbok.com",
+            "password": "password"
+        }
+
+        response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(User.objects.get(email=user_data["email"]), get_user_from_jwt(response.json()["data"]["token"]))
+
+    def case_signinview_post_user_not_exist(self):
+        user_data = {
+            "email"   : "user_not_exist@tteokbok.com",
+            "password": "password"
+        }
+        response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["status"], "INVALID_USER_ERROR")
+
+    def case_signinview_post_wrong_password(self):
+        user_data = {
+            "email"   : "test01@tteokbok.com",
+            "password": "wrongpassword"
+        }
+
+        response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["status"], "UNAUTHORIZATION_ERROR")
+
+    def test_email_signin(self):
+        self.case_signinview_post_success()
+        self.case_signinview_post_user_not_exist()
+        self.case_signinview_post_wrong_password()
