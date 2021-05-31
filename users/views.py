@@ -89,7 +89,7 @@ class KakaoSignInView(View):
             response     = requests.get('https://kapi.kakao.com/v2/user/me', headers={"Authorization": f'Bearer ${access_token}'})
             data         = response.json()
 
-            if not response.ok:
+            if response.status_code != 200:
                 return JsonResponse({"status": "API_ERROR", "message": data['msg']}, status=response.status_code)
 
             kakao_id           = data['id']
