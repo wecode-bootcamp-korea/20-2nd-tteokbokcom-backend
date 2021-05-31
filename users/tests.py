@@ -4,7 +4,7 @@ from unittest.mock  import patch
 from django.test    import TestCase, Client
 
 from users.models   import User
-from utils.auth     import get_user_from_jwt, hash_password
+from utils.auth     import get_user_from_jwt, hash_password, issue_token
 
 class UsersTest(TestCase):
     client = Client()
@@ -214,3 +214,16 @@ class UsersTest(TestCase):
         
         self.assertEqual(response.status_code, mock_response.status_code)
         self.assertEqual(response.json()["status"], "API_ERROR")
+
+    def test_meview_get_success(self):
+        user     = User.objects.get(email="test01@tteokbok.com")
+        token    = issue_token(user)
+        response = self.client.get("/users/me", HTTP_AUTHORIZATION=token, content_type="application/json")
+
+        self.assertEqual(response.json()["data"]["user"], user.to_dict("password"))
+
+    def test_meview_get_unauthorized(self):
+        response = self.client.get("/users/me", content_type="application/json")
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["status"], "UNAUTHORIZATION_ERROR")
