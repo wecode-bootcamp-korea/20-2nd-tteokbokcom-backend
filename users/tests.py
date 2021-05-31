@@ -1,4 +1,5 @@
 import json
+from unittest.mock  import patch
 
 from django.test    import TestCase, Client
 
@@ -18,7 +19,7 @@ class UsersTest(TestCase):
     def tearDown(self):
         User.objects.all().delete()
 
-    def case_signupview_post_success(self):
+    def test_signupview_post_success(self):
         user_data = {
             "username": "김떡볶",
             "email"   : "ilove@tteokbok.com",
@@ -43,10 +44,10 @@ class UsersTest(TestCase):
             }
         )
 
-    def case_signupview_post_duplicated_email(self):
+    def test_signupview_post_duplicated_email(self):
         user_data = {
             "username": "김떡볶",
-            "email"   : "ilove@tteokbok.com",
+            "email"   : "test01@tteokbok.com",
             "password": "tteokbokki"
         }
 
@@ -59,7 +60,7 @@ class UsersTest(TestCase):
             }
         )
 
-    def case_signupview_post_invalid_data(self):
+    def test_signupview_post_invalid_data(self):
         user_data_invalid_email = {
             "username": "김떡볶",
             "email"   : "iloveteokbok.com",
@@ -97,12 +98,7 @@ class UsersTest(TestCase):
             self.assertEqual(response.status_code, 400)
             self.assertEqual(response.json()['status'], "INVALID_DATA_ERROR")
 
-    def test_email_signup(self):
-        self.case_signupview_post_success()
-        self.case_signupview_post_duplicated_email()
-        self.case_signupview_post_invalid_data()
-
-    def case_signinview_post_success(self):
+    def test_signinview_post_success(self):
         user_data = {
             "email"   : "test01@tteokbok.com",
             "password": "password"
@@ -112,7 +108,7 @@ class UsersTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(User.objects.get(email=user_data["email"]), get_user_from_jwt(response.json()["data"]["token"]))
 
-    def case_signinview_post_user_not_exist(self):
+    def test_signinview_post_user_not_exist(self):
         user_data = {
             "email"   : "user_not_exist@tteokbok.com",
             "password": "password"
@@ -121,7 +117,7 @@ class UsersTest(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["status"], "INVALID_USER_ERROR")
 
-    def case_signinview_post_wrong_password(self):
+    def test_signinview_post_wrong_password(self):
         user_data = {
             "email"   : "test01@tteokbok.com",
             "password": "wrongpassword"
@@ -131,7 +127,90 @@ class UsersTest(TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json()["status"], "UNAUTHORIZATION_ERROR")
 
-    def test_email_signin(self):
-        self.case_signinview_post_success()
-        self.case_signinview_post_user_not_exist()
-        self.case_signinview_post_wrong_password()
+    @patch('users.views.requests.get')
+    def test_kakaosigninview_post_signup_success(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "id": 12341234,
+            "connected_at": "2021-05-26T07:34:57Z",
+            "properties": {
+                "nickname": "임떡볶",
+                "profile_image": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_640x640.jpg",
+                "thumbnail_image": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_110x110.jpg"
+            },
+            "kakao_account": {
+                "profile_needs_agreement": False,
+                "profile": {
+                    "nickname": "임떡볶",
+                    "thumbnail_image_url": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_110x110.jpg",
+                    "profile_image_url": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_640x640.jpg",
+                    "is_default_image": False
+                },
+                "has_email": True,
+                "email_needs_agreement": False,
+                "is_email_valid": True,
+                "is_email_verified": True,
+                "email": "tteokbok@kakao.com"
+            }
+        }
+
+        response = self.client.post('/users/signin/kakao',
+                                    data=json.dumps({"access_token": "gxfEZ3VPKWxSrNDV_tO16YnduKfljNC25mz6n2TRUdLNfMQ4JssGHSxDfrQfqTe08wpT8QopcBMAAAF5qFYFMQ"}),
+                                    content_type="application/json")
+        expected_user = User.objects.get(kakao_id=mock_response.json()["id"])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(get_user_from_jwt(response.json()["data"]["token"]), expected_user)
+
+    @patch('users.views.requests.get')
+    def test_kakaosigninview_post_signin_success(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "id": 12341234,
+            "connected_at": "2021-05-26T07:34:57Z",
+            "properties": {
+                "nickname": "임떡볶",
+                "profile_image": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_640x640.jpg",
+                "thumbnail_image": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_110x110.jpg"
+            },
+            "kakao_account": {
+                "profile_needs_agreement": False,
+                "profile": {
+                    "nickname": "임떡볶",
+                    "thumbnail_image_url": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_110x110.jpg",
+                    "profile_image_url": "http://k.kakaocdn.net/dn/c9oFJD/btqHR6L8rkC/0Ylcx7xgNvyuPTt7mFKl0K/img_640x640.jpg",
+                    "is_default_image": False
+                },
+                "has_email": True,
+                "email_needs_agreement": False,
+                "is_email_valid": True,
+                "is_email_verified": True,
+                "email": "tteokbok@kakao.com"
+            }
+        }
+
+        response = self.client.post('/users/signin/kakao',
+                                    data=json.dumps({"access_token": "gxfEZ3VPKWxSrNDV_tO16YnduKfljNC25mz6n2TRUdLNfMQ4JssGHSxDfrQfqTe08wpT8QopcBMAAAF5qFYFMQ"}),
+                                    content_type="application/json")
+        expected_user = User.objects.get(kakao_id=mock_response.json()["id"])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(get_user_from_jwt(response.json()["data"]["token"]), expected_user)
+
+    @patch('users.views.requests.get')
+    def test_kakaosigninview_post_api_failure(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            "code": -401,
+            "msg": "this access token is already expired"
+        }
+
+        response = self.client.post('/users/signin/kakao',
+                                    data=json.dumps({"access_token": "gxfEZ3VPKWxSrNDV_tO16YnduKfljNC25mz6n2TRUdLNfMQ4JssGHSxDfrQfqTe08wpT8QopcBMAAAF5qFYFMQ"}),
+                                    content_type="application/json")
+        
+        self.assertEqual(response.status_code, mock_response.status_code)
+        self.assertEqual(response.json()["status"], "API_ERROR")
