@@ -1,26 +1,25 @@
 import json
 import requests
-from json                   import JSONDecodeError
+from json                       import JSONDecodeError
 
-from django.http            import JsonResponse
-from django.views           import View
-from django.core.exceptions import ValidationError
-from django.db.utils        import DataError
+from django.http                import JsonResponse
+from django.views               import View
+from django.db.utils            import DataError
+from django.utils.decorators    import method_decorator
+from django.core.exceptions     import ValidationError
 
-from users.models           import User
-from users.validators       import (DuplicatedEntryError,
-                                    validate_username, 
-                                    validate_email, 
-                                    validate_password, 
-                                    validate_duplicate)
-from utils.auth             import (UnauthorizationError,
-                                    check_password,
-                                    issue_token,
-                                    hash_password,
-                                    )
-from utils.decorators        import login_required
-from django.utils.decorators import method_decorator
-
+from users.models               import User
+from utils.decorators           import login_required
+from utils.auth                 import (UnauthorizationError,
+                                        check_password,
+                                        issue_token,
+                                        hash_password)
+from users.validators           import (DuplicatedEntryError,
+                                        validate_username, 
+                                        validate_email, 
+                                        validate_password, 
+                                        validate_duplicate)
+                                        
 class SignUpView(View):
     def post(self, request):
         try:

@@ -1,11 +1,9 @@
+from faker                  import Faker
 import csv
 import random
-from faker                  import Faker
-
-from django.db              import IntegrityError
-from django.core.exceptions import MultipleObjectsReturned
 
 from users.models           import User
+from utils.auth             import hash_password
 from projects.models        import Project, Category, FundingOption, Donation
 
 NUM_USERS        = 100
@@ -61,7 +59,7 @@ class DataFactory:
                 continue
             user_data = {
                         'email'   : profile['mail'],
-                        'password': cls.fake.password(),
+                        'password': hash_password(cls.fake.password()),
                         'username': profile['name'],
                         }
             User.objects.get_or_create(**user_data)
@@ -78,7 +76,7 @@ class DataFactory:
             creater = User.objects.filter(username=creater_name)[0]
         
         else:
-            creater, _ = User.objects.get_or_create(email=creater_email, password="password", username=creater_name, introduction=creater_introduction)
+            creater, _ = User.objects.get_or_create(email=creater_email, password=hash_password("password"), username=creater_name, introduction=creater_introduction)
         
         input_data = {
             "title"          : data["title"],
