@@ -53,9 +53,9 @@ class ProjectListView(View):
             'category'             : project.category.name,
             'creater'              : project.creater.username,
             'summary'              : project.summary,
-            'funding_amount'       : int(project.donation_set.all().aggregate(Sum('funding_option__amount'))['funding_option__amount__sum']),
+            'funding_amount'       : float(project.donation_set.all().aggregate(Sum('funding_option__amount'))['funding_option__amount__sum'] if len(project.donation_set.all()) > 0 else 0),
             'target_amount'        : int(project.target_fund),
             'end_date'             : project.end_date
         } for project in project_list]
 
-        return JsonResponse({'projects': projects}, status=200)
+        return JsonResponse({'status': "SUCCESS", "data": {'projects': projects} }, status=200)
