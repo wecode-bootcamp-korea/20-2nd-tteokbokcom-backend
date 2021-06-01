@@ -1,10 +1,10 @@
 import jwt
 import functools
 
-from django.http import JsonResponse
+from django.http    import JsonResponse
 
-from users.models import User
-from utils.auth import get_user_from_jwt, decode_jwt
+from users.models   import User
+from utils.auth     import get_user_from_jwt, decode_jwt
 
 def login_required():
     def decorator(function):
