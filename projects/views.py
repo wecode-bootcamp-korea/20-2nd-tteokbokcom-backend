@@ -1,42 +1,43 @@
 import json
-from json.decoder         import JSONDecodeError
+from json.decoder            import JSONDecodeError
 
-from django.views         import View
-from django.db.models     import Sum
-from django.http.response import JsonResponse
+from django.views            import View
+from django.db.models        import Sum
+from django.http.response    import JsonResponse
+from django.db               import transaction
+from django.utils.decorators import method_decorator
 
-from .models              import Project, Donation
+from utils.decorators        import login_required
+from .models                 import FundingOption, Project, Donation
 
 class ProjectDetailView(View):
-    def get(self, request, id):
+    @method_decorator(login_required())
+    def put(self, request):
         try:
-            project = Project.objects.prefetch_related('fundingoption_set', 'fundingoption_set__donation_set').get(id=id)
-        
-            result = {
-                'id'                   : project.id,
-                'title_image_url'      : project.title_image_url,
-                'title'                : project.title,
-                'category'             : project.category.name,
-                'creater'              : project.creater.username,
-                'creater_profile_image': project.creater.profile_image_url,
-                'creater_introduction' : project.creater.introduction,
-                'summary'              : project.summary,
-                'funding_amount'       : int(project.donation_set.aggregate(Sum('funding_option__amount'))['funding_option__amount__sum']),
-                'target_amount'        : int(project.target_fund),
-                'total_sponsor'        : project.donation_set.count(),
-                'end_date'             : project.end_date,
-                "funding_option"       :
-                [{
-                    'option_id'        : int(funding_option.id),
-                    "amount"           : int(funding_option.amount),
-                    "title"            : funding_option.title,
-                    "remains"          : None if funding_option.remains is None else int(funding_option.remains),
-                    "description"      : funding_option.description,
-                    "selected_funding" : int(funding_option.donation_set.count())
-                } for funding_option in project.fundingoption_set.all()],
-            }
+            data           = json.loads(request.body)
+            project_id     = data['id']
+            option_id      = data['option_id']
+            project        = Project.objects.get(id=project_id)
+            funding_option = FundingOption.objects.get(id=option_id)
 
-            return JsonResponse({'result': result}, status=200)
+            if funding_option.remains == 0:
+                return JsonResponse({'messages': 'NO_STOCK'}, status=400)
 
+            with transaction.atomic():
+                Donation.objects.create(
+                    user                = request.user,
+                    project             = project,
+                    funding_option      = funding_option
+                )
+
+                if funding_option.remains is not None:
+                    funding_option.remains -= 1
+                    funding_option.save()
+
+            return JsonResponse({'messages': "SUCCESS"}, status=201)
+        except KeyError:
+            return JsonResponse({'messages': "KEY_ERROR"}, status=400)
         except Project.DoesNotExist:
-            return JsonResponse({'messages': 'DOES_NOT_EXIST'}, status=404)
+            return JsonResponse({'messages': "PROJECT_ID_DOES_NOT EXIST"}, status=400)
+        except FundingOption.DoesNotExist:
+            return JsonResponse({'messages': "FUNDING_OPTION_ID_DOES_NOT EXIST"}, status=400)

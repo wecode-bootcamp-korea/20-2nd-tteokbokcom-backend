@@ -1,5 +1,6 @@
 from pathlib import Path
 import my_settings as my_settings
+from my_settings import DATABASES, SECRET
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -142,7 +143,6 @@ CORS_ALLOW_HEADERS = (
 	#만약 허용해야할 추가적인 헤더키가 있다면?(사용자정의 키) 여기에 추가하면 됩니다.
     )
 
-APPEND_SLASH     = False
 JWT_SECRET_KEY   = my_settings.JWT_SECRET_KEY
 JWT_DURATION_SEC = my_settings.JWT_DURATION_SEC
 JWT_ALGORITHM    = my_settings.JWT_ALGORITHM
