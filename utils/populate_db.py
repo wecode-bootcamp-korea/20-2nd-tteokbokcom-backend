@@ -100,6 +100,15 @@ class DataFactory:
     def link_funding_option(cls, data):
         project = Project.objects.get(title=data["title"])
 
+        default_option = {
+                            "amount"     : 1000.0,
+                            "project"    : project,
+                            "remains"    : 1000,
+                            "title"      : "선물을 선택하지 않고 밀어만 줍니다.",
+                            "description": "기본 선물"
+                        }
+        FundingOption.objects.create(**default_option)
+        
         options = []
 
         if data.get("funding_option_title_1"):

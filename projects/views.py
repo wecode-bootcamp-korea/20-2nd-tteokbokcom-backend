@@ -68,13 +68,13 @@ class ProjectDetailView(View):
             else:
                 Likes.objects.create(user = user, project = project)
 
-            return JsonResponse({"status": "SUCCESS", 'message': f'is_liked changed to {not is_liked}'}, status=200)
+            return JsonResponse({"status": "SUCCESS", 'message': f'is_liked changed to {not is_liked}', 'is_liked': not is_liked}, status=200)
 
         except Project.DoesNotExist:
             return JsonResponse({"status": "INVALID_PROJECT_ERROR", 'messages': 'Project does not exist.'}, status=404)
 
     @method_decorator(login_required())
-    def put(self, request):
+    def put(self, request, id):
         try:
             data           = json.loads(request.body)
             option_id      = data['option_id']
@@ -102,7 +102,11 @@ class ProjectDetailView(View):
         except FundingOption.DoesNotExist:
             return JsonResponse({'messages': "FUNDING_OPTION_ID_DOES_NOT EXIST"}, status=400)
 
-class ProjectListView(View):
+class ProjectView(View):
+    DEFAULT_AMOUNT      = 1000
+    DEFAULT_DESCRIPTION = '선물을 선택하지 않고 밀어만 줍니다'
+    DEFAULT_TITLE       = '기본 선물'
+    
     @method_decorator(check_user())
     def get(self, request):
         queries       = request.GET
@@ -114,6 +118,7 @@ class ProjectListView(View):
         category      = queries.get('category')
         status        = queries.get('status')
         liked         = queries.get('liked')
+        donated       = queries.get('donated')
         sort_criteria = queries.get('sorted', 'default')
         search        = queries.get('search')
 
@@ -125,6 +130,7 @@ class ProjectListView(View):
             'category__name'     : category,
             'status'             : status,
             'is_liked'           : True if liked is not None else False,
+            'is_donated'         : True if donated is not None else False,
         }
 
         filter_set = { k: v for k, v in filter_set.items() if v }
@@ -147,6 +153,8 @@ class ProjectListView(View):
                                                                     default=Value("ing")))\
                                             .annotate(is_liked = Case(When(likes__user = user, then=Value(True)),
                                                                       default=Value(False)))\
+                                            .annotate(is_donated = Case(When(donation__user = user, then=Value(True)),
+                                                                      default=Value(False)))\
                                             .filter(**filter_set)\
                                             .order_by(sortby_set[sort_criteria])
 
@@ -168,14 +176,10 @@ class ProjectListView(View):
             'status'         : project.status,
             'progress'       : project.progress,
             'is_liked'       : project.is_liked if user else False,
+            'is_donated'     : project.is_donated if user else False,
         } for project in project_list]
 
         return JsonResponse({'status': "SUCCESS", "data": {'num_projects': len(projects), 'projects': projects} }, status=200)
-
-class ProjectRegisterView(View):
-    DEFAULT_AMOUNT      = 1000
-    DEFAULT_DESCRIPTION = '선물을 선택하지 않고 밀어만 줍니다'
-    DEFAULT_TITLE       = '기본 선물'
 
     @method_decorator(login_required())
     def post(self, request):
