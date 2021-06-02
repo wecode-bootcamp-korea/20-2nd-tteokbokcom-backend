@@ -1,4 +1,4 @@
-from django.test     import TestCase, Client
+from django.test                    import TestCase, Client
 
 from users.models    import User
 from projects.models import Project, Category, FundingOption, Donation
@@ -150,6 +150,7 @@ class ProjectDetailTest(TestCase):
             {
                 "result" : {
                     "id" : 1,
+                    "is_liked": False,
                     "title_image_url"      : "title_image.jpg",
                     "title"                : "프로젝트1",
                     "category"             : "카테고리1",
@@ -200,6 +201,7 @@ class ProjectDetailTest(TestCase):
             {
                 "result" : {
                     "id" : 2,
+                    "is_liked": False,
                     "title_image_url"      : "title_image.jpg",
                     "title"                : "프로젝트2",
                     "category"             : "카테고리1",
@@ -278,6 +280,116 @@ class ProjectDetailTest(TestCase):
         like_patch_response = client.patch(f'/projects/{project.id}', content_type="application/json")
         self.assertEqual(like_patch_response.status_code, 401)
         self.assertEqual(like_patch_response.json(), {'status': 'UNAUTHORIZATION_ERROR', 'message': 'Login Required.'})
+
+class ProjectPaymentTest(TestCase):
+    client = Client()
+
+    @classmethod
+    def setUpClass(cls):
+        User.objects.create(
+            username          = '유저1',
+            introduction      = '유저소개',
+            email             = 'test1@mail.com',
+            password          = hash_password('12345678')
+        )
+
+        Category.objects.create(name='카테고리1')
+
+        cls.project = Project.objects.create(
+            title           = '프로젝트1',
+            creater         = User.objects.get(email='test1@mail.com'),
+            summary         = '프로젝트 설명',
+            category        = Category.objects.get(name='카테고리1'),
+            title_image_url = 'title_image.jpg',
+            target_fund     = 1000000,
+            launch_date     = '2021-05-01',
+            end_date        = '2021-05-31',
+            created_at      = '2021-05-01'
+        )
+
+        cls.option1 = FundingOption.objects.create(
+            amount      = 1000,
+            project     = Project.objects.get(title='프로젝트1'),
+            title       = '기본옵션',
+            description = '선물을 선택하지 않고 밀어만 줍니다.'
+        )
+
+        FundingOption.objects.create(
+            amount      = 2000,
+            project     = Project.objects.get(title='프로젝트1'),
+            title       = '옵션1',
+            description = '옵션1에 대한 설명',
+            remains     = 50
+        )
+
+        cls.option3 = FundingOption.objects.create(
+            amount      = 3000,
+            project     = Project.objects.get(title='프로젝트1'),
+            title       = '옵션2',
+            description = '옵션2에 대한 설명',
+            remains     = 0
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        FundingOption.objects.all().delete()
+        Project.objects.all().delete()
+        User.objects.all().delete()
+        Category.objects.all().delete()
+
+    def test_project_payment_success(self):
+        user_data = {
+            'email'   : 'test1@mail.com',
+            'password': '12345678'
+        }
+
+        data = {
+            'id': self.project.id,
+            'option_id': self.option1.id
+        }
+
+        signin_response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        token           = signin_response.json().get("data").get("token")
+        response        = self.client.put("/projects", HTTP_AUTHORIZATION=token, data=data, content_type="application/json")
+        self.assertEqual(response.status_code, 201)
+
+    def test_project_payment_no_stock(self):
+        user_data = {
+            'email'   : 'test1@mail.com',
+            'password': '12345678'
+        }
+
+        data = {
+            'id': self.project.id,
+            'option_id': self.option3.id
+        }
+
+        signin_response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        token           = signin_response.json().get("data").get("token")
+        response        = self.client.put("/projects", HTTP_AUTHORIZATION=token, data=data, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(),
+            {'messages': 'NO_STOCK'}
+        )
+
+    def test_project_funding_option_id_does_not_exist(self):
+        user_data = {
+            'email'   : 'test1@mail.com',
+            'password': '12345678'
+        }
+
+        data = {
+            'id': self.project.id,
+            'option_id': 999
+        }
+
+        signin_response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        token           = signin_response.json().get("data").get("token")
+        response        = self.client.put("/projects", HTTP_AUTHORIZATION=token, data=data, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(),
+            {'messages': 'FUNDING_OPTION_ID_DOES_NOT EXIST'}
+        )
 
 class ProjectListTest(TestCase):
     def setUp(self):
@@ -472,6 +584,7 @@ class ProjectListTest(TestCase):
                     ]
                 }
             })
+    
     def test_projectlistview_get_sort_amount(self):
         client = Client()
         response = client.get('/projects?sorted=amount')
@@ -529,6 +642,7 @@ class ProjectListTest(TestCase):
                     ]
                 }
             })
+        
     def test_projectlistview_get_sort_people(self):
         client = Client()
         response = client.get('/projects?sorted=people')
@@ -586,6 +700,7 @@ class ProjectListTest(TestCase):
                     ]
                 }
             })
+        
     def test_projectlistview_get_sort_old(self):
         client = Client()
         response = client.get('/projects?sorted=old')
