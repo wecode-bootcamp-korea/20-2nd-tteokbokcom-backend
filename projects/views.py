@@ -29,7 +29,7 @@ class ProjectDetailView(View):
                 'creater_profile_image': project.creater.profile_image_url,
                 'creater_introduction' : project.creater.introduction,
                 'summary'              : project.summary,
-                'funding_amount'       : int(project.donation_set.aggregate(Sum('funding_option__amount'))['funding_option__amount__sum']),
+                'funding_amount'       : 0 if project.donation_set.count() == 0 else int(project.donation_set.aggregate(Sum('funding_option__amount'))['funding_option__amount__sum']),
                 'target_amount'        : int(project.target_fund),
                 'total_sponsor'        : project.donation_set.count(),
                 'end_date'             : project.end_date,

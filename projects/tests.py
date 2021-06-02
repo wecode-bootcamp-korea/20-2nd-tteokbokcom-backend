@@ -91,6 +91,41 @@ class ProjectDetailTest(TestCase):
             updated_at     = '2021-05-01'
         )
 
+        Project.objects.create(
+            title           = '프로젝트2',
+            creater         = User.objects.get(id=1),
+            summary         = '프로젝트 설명',
+            category        = Category.objects.get(id=1),
+            title_image_url = 'title_image.jpg',
+            target_fund     = 1000000,
+            launch_date     = '2021-05-01',
+            end_date        = '2021-05-31',
+            created_at      = '2021-05-01'
+        )
+
+        FundingOption.objects.create(
+            amount      = 1000,
+            project     = Project.objects.get(id=2),
+            title       = '기본옵션',
+            description = '선물을 선택하지 않고 밀어만 줍니다.'
+        )
+
+        FundingOption.objects.create(
+            amount      = 2000,
+            project     = Project.objects.get(id=2),
+            title       = '옵션1',
+            description = '옵션1에 대한 설명',
+            remains     = 50
+        )
+
+        FundingOption.objects.create(
+            amount      = 3000,
+            project     = Project.objects.get(id=2),
+            title       = '옵션2',
+            description = '옵션2에 대한 설명',
+            remains     = 40
+        )
+
     @classmethod
     def tearDownClass(cls):
         Donation.objects.all().delete()
@@ -137,6 +172,56 @@ class ProjectDetailTest(TestCase):
                         },
                         {
                         "option_id"        : 3,
+                        "amount"           : 3000,
+                        "title"            : "옵션2",
+                        "remains"          : 40,
+                        "description"      : "옵션2에 대한 설명",
+                        "selected_funding" : 0
+                        },
+                    ],
+                }
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_project_detail_funding_amount_zero(self):
+        client   = Client()
+        response = client.get('/projects/2')
+        self.assertEqual(response.json(),
+            {
+                "result" : {
+                    "id" : 2,
+                    "title_image_url"      : "title_image.jpg",
+                    "title"                : "프로젝트2",
+                    "category"             : "카테고리1",
+                    "creater"              : "유저1",
+                    "creater_profile_image": "profile1.jpg",
+                    "creater_introduction" : "유저소개",
+                    "summary"              : "프로젝트 설명",
+                    "funding_amount"       : 0,
+                    "target_amount"        : 1000000,
+                    "total_sponsor"        : 0,
+                    "end_date"             : "2021-05-31T00:00:00",
+                    "funding_option"       :
+                    [
+                        {
+                        "option_id"        : 4,
+                        "amount"           : 1000,
+                        "title"            : "기본옵션",
+                        "remains"          : None,
+                        "description"      : "선물을 선택하지 않고 밀어만 줍니다.",
+                        "selected_funding" : 0
+                        },
+                        {
+                        "option_id"        : 5,
+                        "amount"           : 2000,
+                        "title"            : "옵션1",
+                        "remains"          : 50,
+                        "description"      : "옵션1에 대한 설명",
+                        "selected_funding" : 0
+                        },
+                        {
+                        "option_id"        : 6,
                         "amount"           : 3000,
                         "title"            : "옵션2",
                         "remains"          : 40,
