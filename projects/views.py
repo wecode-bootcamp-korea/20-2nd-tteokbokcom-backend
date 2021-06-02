@@ -11,7 +11,7 @@ from django.db.models.aggregates    import Count
 from django.http.response           import JsonResponse
 from django.utils.decorators        import method_decorator
 
-from projects.models                import Category, Project, Tag, FundingOption
+from .models                        import FundingOption, Project, Donation
 from users.models                   import Likes
 from utils.s3_file_util             import S3FileUtils
 from utils.decorators               import login_required, check_user
@@ -69,6 +69,35 @@ class ProjectDetailView(View):
 
         except Project.DoesNotExist:
             return JsonResponse({"status": "INVALID_PROJECT_ERROR", 'messages': 'Project does not exist.'}, status=404)
+
+    @method_decorator(login_required())
+    def put(self, request):
+        try:
+            data           = json.loads(request.body)
+            option_id      = data['option_id']
+            funding_option = FundingOption.objects.get(id=option_id)
+
+            if funding_option.remains == 0:
+                return JsonResponse({'messages': 'NO_STOCK'}, status=400)
+
+            with transaction.atomic():
+                Donation.objects.create(
+                    user                = request.user,
+                    project             = funding_option.project,
+                    funding_option      = funding_option
+                )
+
+                if funding_option.remains is not None:
+                    funding_option.remains -= 1
+                    funding_option.save()
+
+            return JsonResponse({'messages': "SUCCESS"}, status=201)
+        except KeyError:
+            return JsonResponse({'messages': "KEY_ERROR"}, status=400)
+        except Project.DoesNotExist:
+            return JsonResponse({'messages': "PROJECT_ID_DOES_NOT EXIST"}, status=400)
+        except FundingOption.DoesNotExist:
+            return JsonResponse({'messages': "FUNDING_OPTION_ID_DOES_NOT EXIST"}, status=400)
 
 class ProjectView(View):
     DEFAULT_AMOUNT      = 1000
