@@ -1,8 +1,9 @@
 from django.test                    import TestCase, Client
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from users.models    import User
-from projects.models import Project, Category, FundingOption, Donation
-from utils.auth      import hash_password
+from users.models                   import User
+from projects.models                import Project, Category, FundingOption, Donation
+from utils.auth                     import hash_password, issue_token
 
 class ProjectDetailTest(TestCase):
     @classmethod
@@ -969,3 +970,66 @@ class ProjectListTest(TestCase):
                     ]
                 }
             })
+
+class ProjectRegisterTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        User.objects.create(
+            username          = '유저1',
+            email             = 'test1@mail.com',
+            password          = hash_password("12345678")
+        )
+
+        Category.objects.create(name='카테고리1')
+
+    @classmethod
+    def tearDownClass(cls):
+        User.objects.all().delete()
+        Project.objects.all().delete()
+
+    def test_project_register_success(self):
+        client           = Client()
+        test_image       = SimpleUploadedFile(
+            name         = 'test.jpg',
+            content_type = 'image/jpg',
+            content      = b'file_content'
+        )
+
+        data = {
+            'profile_img'  : test_image,
+            'project_img'  : test_image,
+            'info'         : 
+            {
+                'title'       : '프로젝트 타이틀',
+                'summary'     : '프로젝트 설명',
+                'category'    : '카테고리1',
+                'target_fund' : 1000000,
+                'tags'        : ['태그1', '태그2', '태그3'],
+                'launch_date' : '2021-06-01',
+                'end_date'    : '2021-06-30',
+                'reward_one'  :
+                {
+                    'amount'      : 2000,
+                    'remains'     : 20,
+                    'title'       : '옵션1',
+                    'description' : '옵션 설명'
+                },
+                'reward_two'  :
+                {
+                    'amount'      : 3000,
+                    'remains'     : 30,
+                    'title'       : '옵션2',
+                    'description' : '옵션 설명'
+                },
+                'username'    : '유저 이름',
+                # 'introduction': '유저 소개'
+            }
+        }
+
+        user_data = {
+            "email"   : "test1@mail.com",
+            "password": "12345678"
+        }
+        signin_response = self.client.post('/users/signin', data=user_data, content_type="application/json")
+        token           = signin_response.json().get("data").get("token")
+        client.post('/projects', data, format='multipart')
