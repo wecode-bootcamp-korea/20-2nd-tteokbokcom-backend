@@ -2,6 +2,7 @@ from django.test     import TestCase, Client
 
 from users.models    import User
 from projects.models import Project, Category, FundingOption, Donation
+from utils.auth      import hash_password
 
 class ProjectDetailTest(TestCase):
     @classmethod
@@ -28,6 +29,14 @@ class ProjectDetailTest(TestCase):
             email             = 'test3@mail.com',
             password          = '12345678',
             profile_image_url = 'profile3.jpg'
+        )
+
+        User.objects.create(
+            username          = '테스트유저',
+            introduction      = '테스트 유저 소개',
+            email             = 'test@tteokbok.com',
+            password          = hash_password("password"),
+            profile_image_url = 'profile_image.jpeg'
         )
 
         Category.objects.create(name='카테고리1')
@@ -370,3 +379,28 @@ class ProjectListTest(TestCase):
         self.assertEqual(response.json(),
                          {"projects": [{"id": 2, "title_image_url": "title.jpg", "title": "\ud504\ub85c\uc81d\ud2b82", "category": "\uce74\ud14c\uace0\ub9ac2", "creater": "testuser1", "summary": "\ub3c8\ub0b4\ub194\uc694 \ub3c8\ub0b4\ub194", "funding_amount": "5000.00", "target_amount": "2000000.00", "end_date": "2021-05-31T00:00:00"}, {"id": 1, "title_image_url": "title.jpg", "title": "\ud504\ub85c\uc81d\ud2b81", "category": "\uce74\ud14c\uace0\ub9ac1", "creater": "testuser1", "summary": "\ub3c8\ub0b4\ub194\uc694 \ub3c8\ub0b4\ub194", "funding_amount": "3000.00", "target_amount": "1000000.00", "end_date": "2021-05-30T00:00:00"}]}
                         )
+    def test_project_detail_patch_like_success(self):
+        client    = Client()
+        user_data = {
+            "email"   : "test@tteokbok.com",
+            "password": "password"
+        }
+        project        = Project.objects.get(title="프로젝트1")
+        login_response = client.post('/users/signin', data=user_data, content_type="application/json")
+        token          = login_response.json().get("data").get("token")
+
+        is_liked_before     = client.get(f'/projects/{project.id}', HTTP_AUTHORIZATION=token, content_type="application/json").json().get('result').get('is_liked')
+        like_patch_response = client.patch(f'/projects/{project.id}', HTTP_AUTHORIZATION=token, content_type="application/json")
+        is_liked_after      = client.get(f'/projects/{project.id}', HTTP_AUTHORIZATION=token, content_type="application/json").json().get('result').get('is_liked')
+
+        self.assertEqual(like_patch_response.status_code, 200)
+        self.assertEqual(like_patch_response.json(), {"status": "SUCCESS", 'message': 'is_liked changed to True'})
+        self.assertEqual(is_liked_before, not is_liked_after)
+
+    def test_project_detail_patch_like_unauthorized(self):
+        client  = Client()
+        project = Project.objects.get(title="프로젝트1")
+
+        like_patch_response = client.patch(f'/projects/{project.id}', content_type="application/json")
+        self.assertEqual(like_patch_response.status_code, 401)
+        self.assertEqual(like_patch_response.json(), {'status': 'UNAUTHORIZATION_ERROR', 'message': 'Login Required.'})
