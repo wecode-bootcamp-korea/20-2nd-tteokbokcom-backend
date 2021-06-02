@@ -115,6 +115,7 @@ class ProjectView(View):
         category      = queries.get('category')
         status        = queries.get('status')
         liked         = queries.get('liked')
+        donated       = queries.get('donated')
         sort_criteria = queries.get('sorted', 'default')
         search        = queries.get('search')
 
@@ -126,6 +127,7 @@ class ProjectView(View):
             'category__name'     : category,
             'status'             : status,
             'is_liked'           : True if liked is not None else False,
+            'is_donated'         : True if donated is not None else False,
         }
 
         filter_set = { k: v for k, v in filter_set.items() if v }
@@ -148,6 +150,8 @@ class ProjectView(View):
                                                                     default=Value("ing")))\
                                             .annotate(is_liked = Case(When(likes__user = user, then=Value(True)),
                                                                       default=Value(False)))\
+                                            .annotate(is_donated = Case(When(donation__user = user, then=Value(True)),
+                                                                      default=Value(False)))\
                                             .filter(**filter_set)\
                                             .order_by(sortby_set[sort_criteria])
 
@@ -169,6 +173,7 @@ class ProjectView(View):
             'status'         : project.status,
             'progress'       : project.progress,
             'is_liked'       : project.is_liked if user else False,
+            'is_donated'     : project.is_donated if user else False,
         } for project in project_list]
 
         return JsonResponse({'status': "SUCCESS", "data": {'num_projects': len(projects), 'projects': projects} }, status=200)
