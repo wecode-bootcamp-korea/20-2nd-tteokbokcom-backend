@@ -118,15 +118,15 @@ class ProjectRegisterView(View):
     DEFAULT_DESCRIPTION = '선물을 선택하지 않고 밀어만 줍니다'
     DEFAULT_TITLE       = '기본 선물'
 
-    @method_decorator(login_required())
-    def get(self, request):
-        user_info = {
-            'creater'           : request.user.username,
-            'profile_img'       : request.user.profile_image_url,
-            'introduction'      : request.user.introduction
-        }
+    # @method_decorator(login_required())
+    # def get(self, request):
+    #     user_info = {
+    #         'creater'           : request.user.username,
+    #         'profile_img'       : request.user.profile_image_url,
+    #         'introduction'      : request.user.introduction
+    #     }
 
-        return JsonResponse({'user_info': user_info})
+    #     return JsonResponse({'user_info': user_info})
 
     @method_decorator(login_required())
     def post(self, request):
