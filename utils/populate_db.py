@@ -100,6 +100,15 @@ class DataFactory:
 
         options = []
 
+        option = {
+                "amount"     : 1000.0,
+                "project"    : project,
+                "remains"    : 1000,
+                "title"      : "선물을 선택하지 않고 밀어만 줍니다.",
+                "description": "기본 선물"
+            }
+        options.append(option)
+
         if data.get("funding_option_title_1"):
             option = {
                 "amount"     : float(data["funding_option_amount_1"].replace(",","")),
