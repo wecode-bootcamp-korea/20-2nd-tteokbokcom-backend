@@ -11,7 +11,7 @@ from django.db.models.aggregates    import Count
 from django.http.response           import JsonResponse
 from django.utils.decorators        import method_decorator
 
-from .models                        import FundingOption, Project, Donation
+from .models                        import FundingOption, Project, Donation, Category, Tag
 from users.models                   import Likes
 from utils.s3_file_util             import S3FileUtils
 from utils.decorators               import login_required, check_user
