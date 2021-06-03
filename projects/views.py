@@ -65,7 +65,7 @@ class ProjectDetailView(View):
             else:
                 Likes.objects.create(user = user, project = project)
 
-            return JsonResponse({"status": "SUCCESS", 'message': f'is_liked changed to {not is_liked}'}, status=200)
+            return JsonResponse({"status": "SUCCESS", 'message': f'is_liked changed to {not is_liked}', 'is_liked': is_liked}, status=200)
 
         except Project.DoesNotExist:
             return JsonResponse({"status": "INVALID_PROJECT_ERROR", 'messages': 'Project does not exist.'}, status=404)
