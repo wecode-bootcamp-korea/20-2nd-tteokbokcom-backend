@@ -140,7 +140,7 @@ class ProjectView(View):
             'old'    : 'end_date'
         }
 
-        project_list = Project.objects.all().select_related('category', 'creater')\
+        project_list = Project.objects.select_related('category', 'creater')\
                                             .prefetch_related('donation_set', 'likes_set')\
                                             .annotate(funding_amount = Coalesce(Sum('donation__funding_option__amount'), Decimal(0)))\
                                             .annotate(funding_count = Coalesce(Count('donation'), 0))\
@@ -155,6 +155,12 @@ class ProjectView(View):
                                             .filter(**filter_set)\
                                             .order_by(sortby_set[sort_criteria])
 
+        if not liked:
+            liked_project_list = project_list.filter(is_liked=True)
+            not_liked_project_list = project_list.filter(is_liked=False)
+            not_liked_project_list = not_liked_project_list.exclude(id__in = liked_project_list)
+            project_list = liked_project_list | not_liked_project_list
+            
         if search:
             project_list = project_list.filter(title__contains = search) | project_list.filter(summary__contains = search)
 
