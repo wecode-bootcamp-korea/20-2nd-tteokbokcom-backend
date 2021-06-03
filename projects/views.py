@@ -75,14 +75,17 @@ class ProjectView(View):
     DEFAULT_DESCRIPTION = '선물을 선택하지 않고 밀어만 줍니다'
     DEFAULT_TITLE       = '기본 선물'
 
+    @method_decorator(check_user())
     def get(self, request):
-        queries = request.GET
+        queries       = request.GET
+        user          = request.user
         progress_min  = queries.get('progressMin')
         progress_max  = queries.get('progressMax')
         amount_min    = queries.get('amountMin')
         amount_max    = queries.get('amountMax')
         category      = queries.get('category')
         status        = queries.get('status')
+        liked         = queries.get('liked')
         sort_criteria = queries.get('sorted', 'default')
         search        = queries.get('search')
 
@@ -92,7 +95,8 @@ class ProjectView(View):
             'funding_amount__gte': amount_min,
             'funding_amount__lte': amount_max,
             'category__name'     : category,
-            'status'             : status
+            'status'             : status,
+            'is_liked'           : True if liked is not None else False,
         }
 
         filter_set = { k: v for k, v in filter_set.items() if v }
@@ -105,17 +109,18 @@ class ProjectView(View):
             'old'    : 'end_date'
         }
 
-        project_list = Project.objects.all().order_by('-id')\
-                                            .select_related('category', 'creater')\
-                                            .prefetch_related('donation_set')\
+        project_list = Project.objects.all().select_related('category', 'creater')\
+                                            .prefetch_related('donation_set', 'likes_set')\
                                             .annotate(funding_amount = Coalesce(Sum('donation__funding_option__amount'), Decimal(0)))\
                                             .annotate(funding_count = Coalesce(Count('donation'), 0))\
                                             .annotate(progress = 100 * F('funding_amount')/F('target_fund'))\
                                             .annotate(status = Case(When(end_date__lt = datetime.now(), then=Value("done")),
                                                                     When(launch_date__gt = datetime.now(), then=Value("scheduled")),
-                                                                    default=Value("ing")))
-
-        project_list = project_list.filter(**filter_set).order_by(sortby_set[sort_criteria])
+                                                                    default=Value("ing")))\
+                                            .annotate(is_liked = Case(When(likes__user = user, then=Value(True)),
+                                                                      default=Value(False)))\
+                                            .filter(**filter_set)\
+                                            .order_by(sortby_set[sort_criteria])
 
         if search:
             project_list = project_list.filter(title__contains = search) | project_list.filter(summary__contains = search)
@@ -134,6 +139,7 @@ class ProjectView(View):
             'end_date'       : project.end_date,
             'status'         : project.status,
             'progress'       : project.progress,
+            'is_liked'       : project.is_liked,
         } for project in project_list]
 
         return JsonResponse({'status': "SUCCESS", "data": {'num_projects': len(projects), 'projects': projects} }, status=200)
