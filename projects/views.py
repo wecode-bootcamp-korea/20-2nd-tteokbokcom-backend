@@ -139,7 +139,7 @@ class ProjectView(View):
             'end_date'       : project.end_date,
             'status'         : project.status,
             'progress'       : project.progress,
-            'is_liked'       : project.is_liked,
+            'is_liked'       : project.is_liked if user else False,
         } for project in project_list]
 
         return JsonResponse({'status': "SUCCESS", "data": {'num_projects': len(projects), 'projects': projects} }, status=200)
