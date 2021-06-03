@@ -71,7 +71,7 @@ class ProjectDetailView(View):
             return JsonResponse({"status": "INVALID_PROJECT_ERROR", 'messages': 'Project does not exist.'}, status=404)
 
     @method_decorator(login_required())
-    def put(self, request):
+    def put(self, request, id):
         try:
             data           = json.loads(request.body)
             option_id      = data['option_id']
